@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx expo *)",
+      "Bash(npx eslint *)",
+      "Bash(node -c screens/FeedScreen.js)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //PID 44428)",
+      "Bash(findstr \"8081\")",
+      "Bash(tasklist)",
+      "Bash(findstr \"node\")",
+      "Bash(powershell \"Get-Process -Id \\(Get-NetTCPConnection -LocalPort 8081 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id,ProcessName\\).Id | Stop-Process -Id\")",
+      "Bash(ls -la \"c:\\\\ReactNative Projects\\\\MG-SG\\\\\")",
+      "Read(//c/ReactNative Projects/**)",
+      "Bash(npm start *)",
+      "Bash(curl -s http://localhost:8081/status)"
+    ]
+  }
+}
