@@ -12,6 +12,10 @@ import CommunityScreen from './screens/CommunityScreen';
 import ChatScreen from './screens/ChatScreen';
 import GuideScreen from './screens/GuideScreen';
 
+function FeedScreenWrapper({ navigation, route }) {
+  return <FeedScreen onOpenComments={(post) => console.log('Open comments:', post)} />;
+}
+
 const Tab = createBottomTabNavigator();
 
 const screenOptions = {
@@ -59,7 +63,7 @@ export default function App() {
           />
           <Tab.Screen
             name="Feed"
-            component={() => <FeedScreen onOpenComments={(post) => console.log('Open comments:', post)} />}
+            component={FeedScreenWrapper}
             options={{
               tabBarLabel: 'Feed',
               tabBarIcon: ({ color }) => (

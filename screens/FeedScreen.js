@@ -16,6 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import { UpvoteIcon, DownvoteIcon } from '../components/VoteIcons';
 
 const { width } = Dimensions.get('window');
 
@@ -187,15 +188,15 @@ const Post = memo(function Post({ post, onOpenComments }) {
 
     Animated.sequence([
       Animated.spring(scaleAnim, {
-        toValue: 1.2,
-        friction: 8,
-        tension: 100,
+        toValue: 1.1,
+        friction: 10,
+        tension: 200,
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
-        friction: 6,
-        tension: 80,
+        friction: 10,
+        tension: 200,
         useNativeDriver: true,
       }),
     ]).start();
@@ -296,11 +297,9 @@ const Post = memo(function Post({ post, onOpenComments }) {
             onPress={() => handleVote('up')}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name={userVote === 'up' ? 'arrow-up' : 'arrow-up-outline'}
-              size={20}
-              color={userVote === 'up' ? '#FF4500' : '#666'}
-            />
+            <Animated.View style={{ transform: [{ scale: upvoteScaleAnim }] }}>
+              <UpvoteIcon size={20} color={userVote === 'up' ? '#FF4500' : '#666'} filled={userVote === 'up'} />
+            </Animated.View>
             <Text style={styles.actionCount}>{formatNumber(upvotes)}</Text>
           </TouchableOpacity>
 
@@ -309,11 +308,9 @@ const Post = memo(function Post({ post, onOpenComments }) {
             onPress={() => handleVote('down')}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name={userVote === 'down' ? 'arrow-down' : 'arrow-down-outline'}
-              size={20}
-              color={userVote === 'down' ? '#7193FF' : '#666'}
-            />
+            <Animated.View style={{ transform: [{ scale: downvoteScaleAnim }] }}>
+              <DownvoteIcon size={20} color={userVote === 'down' ? '#7193FF' : '#666'} filled={userVote === 'down'} />
+            </Animated.View>
             <Text style={styles.actionCount}>{formatNumber(downvotes)}</Text>
           </TouchableOpacity>
         </View>
