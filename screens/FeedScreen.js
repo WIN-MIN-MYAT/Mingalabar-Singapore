@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, memo } from 'react';
+import React, { useState, useRef, useCallback, memo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,65 +12,21 @@ import {
   ScrollView,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import ReAnimated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { UpvoteIcon, DownvoteIcon } from '../components/VoteIcons';
+import CommentModal from '../components/CommentModal';
+import { getFeed, getPostStats } from '../services/feedService';
+import { vote } from '../services/voteService';
+import { useAuth } from '../hooks/useAuth';
+
+
 
 const { width } = Dimensions.get('window');
-
-// Sample data
-const SAMPLE_POSTS = [
-  {
-    id: '1',
-    title: 'Community Launch Announcement',
-    content: '🎉 Welcome to our community! We are excited to have you here.',
-    author: 'Admin Team',
-    images: [
-      'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=600&fit=crop',
-    ],
-    timestamp: '2h ago',
-    upvotes: 124,
-    downvotes: 3,
-    comments: 18,
-    userVote: null,
-    tags: ['community', 'announcement'],
-  },
-  {
-    id: '2',
-    title: 'Major Platform Update Coming Soon',
-    content: '📢 New feature announcement coming next week! This is going to be a major update that brings new functionality and improvements to the platform. We have been working on this for months and we cannot wait to share it with all of you. Stay tuned for more details!',
-    author: 'Tech News',
-    images: [
-      'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=600&fit=crop',
-    ],
-    timestamp: '5h ago',
-    upvotes: 89,
-    downvotes: 5,
-    comments: 32,
-    userVote: null,
-    tags: ['announcement', 'news'],
-  },
-  {
-    id: '3',
-    title: 'နေပြည်တော် နည်းပညာ ဖွံ့ဖြိုးတိုးတက်မှု အစီရင်ခံစာ',
-    content: '🇲🇲 မြန်မာနိုင်ငံတွင် နည်းပညာ ဖွံ့ဖြိုးတိုးတက်မှုသည် နှစ်စဉ်နှစ်တိုင်း တိုးတက်လျက်ရှိပါသည်။ လက်ရှိအချိန်တွင် စတအတ်တပ်ခန်း ၂၀၀ ကျော် ဖွင့်လှစ်ပြီး လူငယ် လူရွယ် ၅၀,၀၀၀ ကျော်က နည်းပညာ သင်တန်း သင်ကြားလျက်ရှိကြပါသည်။ ဒီနှစ်မှာတော့ အစိုးရက ဒစ်ဂျစ်တယ် စီးပွားရေး ပညာရေး မူဘောင် အသစ် မိတ်ဆက်ခဲ့ပါတယ်။ ဒါကြောင့် စွမ်းရည် ရှိပြီး ကျွမ်းကျင်သူ ပညာရှင်များ ပိုမို ပေါ်ပေါက်လာပါမယ်။ နောက်ထပ် နည်းပညာ ကုမ္ပဏီ ၁၀၀ ကျော်လည်း နိုင်ငံတကာ ကုမ္ပဏီများနဲ့ ပူးပေါင်း ဆောင်ရွက်နေပါတယ်။',
-    author: 'မြန်မာနည်းပညာ',
-    images: [
-      'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&h=600&fit=crop',
-    ],
-    timestamp: '1h ago',
-    upvotes: 245,
-    downvotes: 8,
-    comments: 56,
-    userVote: null,
-    tags: ['မြန်မာ', 'နည်းပညာ', 'ပညာရေး'],
-  },
-];
 
 const TAG_COLORS = {
   'health': '#66BB6A',
@@ -104,25 +60,62 @@ function PostTags({ tags }) {
   );
 }
 
+const SNAP_RATIOS = [
+  { ratio: 9 / 16, label: '16:9' },   // 0.5625 landscape
+  { ratio: 1 / 1,  label: '1:1' },    // 1.0 square
+  { ratio: 5 / 4,  label: '4:5' },    // 1.25 portrait
+];
+
+function snapToRatio(actualRatio) {
+  let closest = SNAP_RATIOS[0];
+  let minDiff = Math.abs(actualRatio - closest.ratio);
+  for (const r of SNAP_RATIOS) {
+    const diff = Math.abs(actualRatio - r.ratio);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = r;
+    }
+  }
+  return closest.ratio;
+}
+
 function ImageCarousel({ images }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [imageHeights, setImageHeights] = useState({});
   const scrollViewRef = useRef(null);
+
+  useEffect(() => {
+    images.forEach((uri, index) => {
+      if (imageHeights[index] !== undefined) return;
+      Image.getSize(uri, (imgWidth, imgHeight) => {
+        const snapped = snapToRatio(imgHeight / imgWidth);
+        setImageHeights(prev => ({ ...prev, [index]: width * snapped }));
+      }, () => {
+        setImageHeights(prev => ({ ...prev, [index]: width }));
+      });
+    });
+  }, [images]);
 
   if (!images || images.length === 0) return null;
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  const allLoaded = images.every((_, i) => imageHeights[i] !== undefined);
+  const containerHeight = allLoaded
+    ? imageHeights[0]
+    : width;
+
+  const handleScroll = (event) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const newIndex = Math.round(contentOffsetX / width);
     setCurrentIndex(newIndex);
   };
 
-  const goToImage = useCallback((index: number) => {
+  const goToImage = useCallback((index) => {
     scrollViewRef.current?.scrollTo({ x: index * width, animated: true });
     setCurrentIndex(index);
   }, []);
 
   return (
-    <View style={styles.carouselContainer}>
+    <View style={[styles.carouselContainer, { height: containerHeight }]}>
       <ScrollView
         ref={scrollViewRef}
         horizontal
@@ -132,12 +125,13 @@ function ImageCarousel({ images }) {
         scrollEventThrottle={16}
       >
         {images.map((imageUri, index) => (
-          <Image
-            key={index}
-            source={{ uri: imageUri }}
-            style={styles.postImage}
-            resizeMode="cover"
-          />
+          <View key={index} style={[styles.imageWrapper, { height: containerHeight }]}>
+            <Image
+              source={{ uri: imageUri }}
+              style={[styles.postImage, { height: imageHeights[index] || containerHeight }]}
+              resizeMode="cover"
+            />
+          </View>
         ))}
       </ScrollView>
 
@@ -162,7 +156,7 @@ function ImageCarousel({ images }) {
   );
 }
 
-const Post = memo(function Post({ post, onOpenComments }) {
+const Post = memo(function Post({ post, onOpenComments, onVote, userId }) {
   const [userVote, setUserVote] = useState(post.userVote);
   const [upvotes, setUpvotes] = useState(post.upvotes);
   const [downvotes, setDownvotes] = useState(post.downvotes);
@@ -173,7 +167,7 @@ const Post = memo(function Post({ post, onOpenComments }) {
   const upvoteScaleAnim = useRef(new Animated.Value(1)).current;
   const downvoteScaleAnim = useRef(new Animated.Value(1)).current;
 
-  const handleVote = (type) => {
+  const handleVote = async (type) => {
     if (Platform.OS === 'ios') {
       if (userVote === type) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -201,6 +195,8 @@ const Post = memo(function Post({ post, onOpenComments }) {
       }),
     ]).start();
 
+    const previousUserVote = userVote;
+
     if (userVote === type) {
       if (type === 'up') {
         setUpvotes(upvotes - 1);
@@ -221,6 +217,20 @@ const Post = memo(function Post({ post, onOpenComments }) {
         setDownvotes(downvotes + 1);
       }
       setUserVote(type);
+    }
+
+    if (userId) {
+      try {
+        await onVote(userId, post.id, type);
+      } catch (error) {
+        console.error('Vote failed, reverting:', error);
+        setUserVote(previousUserVote);
+        if (type === 'up') {
+          setUpvotes(userVote === 'up' ? upvotes + 1 : upvotes);
+        } else {
+          setDownvotes(userVote === 'down' ? downvotes + 1 : downvotes);
+        }
+      }
     }
   };
 
@@ -298,7 +308,7 @@ const Post = memo(function Post({ post, onOpenComments }) {
             activeOpacity={0.7}
           >
             <Animated.View style={{ transform: [{ scale: upvoteScaleAnim }] }}>
-              <UpvoteIcon size={20} color={userVote === 'up' ? '#FF4500' : '#666'} filled={userVote === 'up'} />
+              <UpvoteIcon size={24} color={userVote === 'up' ? '#FF4500' : '#666'} filled={userVote === 'up'} />
             </Animated.View>
             <Text style={styles.actionCount}>{formatNumber(upvotes)}</Text>
           </TouchableOpacity>
@@ -309,7 +319,7 @@ const Post = memo(function Post({ post, onOpenComments }) {
             activeOpacity={0.7}
           >
             <Animated.View style={{ transform: [{ scale: downvoteScaleAnim }] }}>
-              <DownvoteIcon size={20} color={userVote === 'down' ? '#7193FF' : '#666'} filled={userVote === 'down'} />
+              <DownvoteIcon size={24} color={userVote === 'down' ? '#7193FF' : '#666'} filled={userVote === 'down'} />
             </Animated.View>
             <Text style={styles.actionCount}>{formatNumber(downvotes)}</Text>
           </TouchableOpacity>
@@ -328,6 +338,50 @@ const Post = memo(function Post({ post, onOpenComments }) {
   );
 });
 
+function SkeletonBox({ width, height, style }) {
+  const opacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    opacity.value = withRepeat(
+      withTiming(0.7, { duration: 800 }),
+      -1,
+      true
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  return (
+    <ReAnimated.View
+      style={[{ width, height, borderRadius: 6, backgroundColor: '#e0e3e5' }, style, animStyle]}
+    />
+  );
+}
+
+function SkeletonPost() {
+  return (
+    <View style={styles.postContainer}>
+      <View style={styles.postHeader}>
+        <SkeletonBox width="70%" height={18} style={{ marginBottom: 6 }} />
+        <SkeletonBox width="40%" height={12} />
+      </View>
+      <View style={styles.postContent}>
+        <SkeletonBox width="100%" height={14} style={{ marginBottom: 4 }} />
+        <SkeletonBox width="90%" height={14} style={{ marginBottom: 4 }} />
+        <SkeletonBox width="60%" height={14} />
+      </View>
+      <SkeletonBox width={width} height={width * 0.6} style={{ borderRadius: 0, marginBottom: 12 }} />
+      <View style={[styles.actionsContainer, { paddingHorizontal: 12 }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <SkeletonBox width={24} height={24} style={{ marginRight: 24, borderRadius: 12 }} />
+          <SkeletonBox width={24} height={24} style={{ borderRadius: 12 }} />
+        </View>
+        <SkeletonBox width={24} height={24} style={{ borderRadius: 12 }} />
+      </View>
+    </View>
+  );
+}
+
 function FeedHeader() {
   const insets = useSafeAreaInsets();
 
@@ -342,14 +396,99 @@ function FeedHeader() {
 }
 
 export default function FeedScreen({ onOpenComments }) {
-  const renderItem = useCallback(({ item }) => <Post post={item} onOpenComments={onOpenComments} />, [onOpenComments]);
+  const { userId, isAuthenticated } = useAuth();
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [commentPost, setCommentPost] = useState(null);
+  const PAGE_SIZE = 20;
+
+  const fetchPosts = useCallback(async (pageNum = 0, isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      }
+
+      const { posts: newPosts, total } = await getFeed({
+        limit: PAGE_SIZE,
+        skip: pageNum * PAGE_SIZE,
+        userId,
+      });
+
+      setPosts(prevPosts => (isRefresh || pageNum === 0) ? newPosts : [...prevPosts, ...newPosts]);
+      setHasMore((pageNum + 1) * PAGE_SIZE < total);
+      setPage(pageNum);
+    } catch (error) {
+      console.error('Failed to fetch feed:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [userId, PAGE_SIZE]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  const handleRefresh = useCallback(() => {
+    fetchPosts(0, true);
+  }, [fetchPosts]);
+
+  const handleLoadMore = useCallback(() => {
+    if (!hasMore || loading) return;
+    fetchPosts(page + 1);
+  }, [hasMore, loading, page, fetchPosts]);
+
+  const handleVote = useCallback(async (uid, postId, voteType) => {
+    try {
+      await vote(uid, postId, voteType);
+    } catch (error) {
+      console.error('Vote error:', error);
+      throw error;
+    }
+  }, []);
+
+  const handleOpenComments = useCallback((post) => {
+    setCommentPost(post);
+  }, []);
+
+  const renderFooter = useCallback(() => {
+    if (!hasMore || loading) return null;
+    return (
+      <View style={styles.loadingMore}>
+        <ActivityIndicator size="small" color="#007AFF" />
+      </View>
+    );
+  }, [hasMore, loading]);
+
+  const renderItem = useCallback(({ item }) => (
+    <Post post={item} onOpenComments={handleOpenComments} onVote={handleVote} userId={userId} />
+  ), [handleOpenComments, handleVote, userId]);
+
   const keyExtractor = useCallback((item) => item.id, []);
+
+  if (loading && posts.length === 0) {
+    return (
+      <View style={styles.container}>
+        <FeedHeader />
+        <FlatList
+          data={[1, 2, 3]}
+          renderItem={() => <SkeletonPost />}
+          keyExtractor={(item) => String(item)}
+          scrollEnabled={false}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <FeedHeader />
       <FlatList
-        data={SAMPLE_POSTS}
+        data={posts}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         showsVerticalScrollIndicator={false}
@@ -359,12 +498,13 @@ export default function FeedScreen({ onOpenComments }) {
         updateCellsBatchingPeriod={50}
         initialNumToRender={10}
         windowSize={10}
-        getItemLayout={(_, index) => ({
-          length: 500,
-          offset: 500 * index,
-          index,
-        })}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
       />
+      <CommentModal post={commentPost} onClose={() => setCommentPost(null)} />
     </View>
   );
 }
@@ -404,10 +544,11 @@ const styles = StyleSheet.create({
   },
   postHeader: {
     paddingHorizontal: 12,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   postTitle: {
-    fontSize: 17,
+    fontSize: 16,
+    lineHeight: 28,
     fontWeight: '700',
     color: '#000',
     marginBottom: 0,
@@ -417,7 +558,7 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   authorName: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
     fontWeight: '500',
   },
@@ -426,7 +567,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   textContent: {
-    fontSize: 15,
+    fontSize: 14,
     lineHeight: 24,
     color: '#333',
   },
@@ -442,13 +583,16 @@ const styles = StyleSheet.create({
   },
   carouselContainer: {
     width: width,
-    height: width * 0.6,
     backgroundColor: '#F5F5F5',
     marginBottom: 12,
   },
   postImage: {
     width: width,
-    height: width * 0.6,
+  },
+  imageWrapper: {
+    width: width,
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   carouselDots: {
     position: 'absolute',
@@ -505,5 +649,15 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666',
     marginLeft: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: 'center',
   },
 });

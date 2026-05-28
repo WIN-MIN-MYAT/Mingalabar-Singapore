@@ -13,7 +13,13 @@
       "Bash(ls -la \"c:\\\\ReactNative Projects\\\\MG-SG\\\\\")",
       "Read(//c/ReactNative Projects/**)",
       "Bash(npm start *)",
-      "Bash(curl -s http://localhost:8081/status)"
+      "Bash(curl -s http://localhost:8081/status)",
+      "Bash(npm view *)",
+      "Bash(cd \"/c/ReactNative Projects/MG-SG\" && rm -rf node_modules package-lock.json)",
+      "Read(//c/Users/anomm/AppData/Local/Temp/8931ff63-8f9e-4917-b819-e5e8e34c068a_stitch_ui_and_branding_enhancement.zip.68a/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\c\\ReactNative Projects\\MG-SG"
     ]
   }
 }

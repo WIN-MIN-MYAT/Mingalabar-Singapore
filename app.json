@@ -23,6 +23,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "contentfulSpace": "ce4s0crufeps",
+      "contentfulAccessToken": "ce4s0crufeps",
+      "contentfulEnvironment": "master",
+      "supabaseUrl": "https://ywqqvcbhvsfjmslpvgec.supabase.co",
+      "supabaseAnonKey": "sb_publishable_e7oSO9pfOiodxYpvFRBmQA_teQvbM6H",
+      "apiBaseUrl": "http://localhost:3000/api"
     }
   }
 }
