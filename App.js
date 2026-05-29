@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
+import CustomTabBar from './components/CustomTabBar';
 import HomeScreen from './screens/HomeScreen';
 import FeedScreen from './screens/FeedScreen';
 import CommunityScreen from './screens/CommunityScreen';
@@ -26,7 +27,10 @@ function FeedScreenWrapper({ navigation, route }) {
 
 function MainTabs() {
   return (
-    <Tab.Navigator screenOptions={screenOptions}>
+    <Tab.Navigator
+      screenOptions={screenOptions}
+      tabBar={(props) => <CustomTabBar {...props} />}
+    >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
@@ -85,30 +89,6 @@ const Tab = createBottomTabNavigator();
 
 const screenOptions = {
   headerShown: false,
-  tabBarActiveTintColor: '#007AFF',
-  tabBarInactiveTintColor: '#8E8E93',
-  tabBarStyle: {
-    backgroundColor: Platform.select({
-      ios: 'rgba(255, 255, 255, 0.85)',
-      android: '#FFFFFF',
-    }),
-    borderTopWidth: 0,
-    elevation: 0,
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    height: 88,
-    paddingBottom: 34,
-    paddingTop: 8,
-  },
-  tabBarLabelStyle: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  tabBarItemStyle: {
-    paddingVertical: 4,
-  },
 };
 
 function AppContent() {

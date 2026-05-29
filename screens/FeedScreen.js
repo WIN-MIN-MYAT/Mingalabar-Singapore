@@ -18,6 +18,13 @@ import { Ionicons } from '@expo/vector-icons';
 import ReAnimated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 import { UpvoteIcon, DownvoteIcon } from '../components/VoteIcons';
 import CommentModal from '../components/CommentModal';
 import { getFeed, getPostStats } from '../services/feedService';
@@ -388,15 +395,18 @@ function FeedHeader() {
   return (
     <View style={[styles.header, { paddingTop: insets.top }]}>
       <Text style={styles.headerTitle}>Feed</Text>
-      <TouchableOpacity style={styles.notificationButton}>
-        <Ionicons name="notifications-outline" size={24} color="#007AFF" />
-      </TouchableOpacity>
     </View>
   );
 }
 
 export default function FeedScreen({ onOpenComments }) {
   const { userId, isAuthenticated } = useAuth();
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -454,6 +464,14 @@ export default function FeedScreen({ onOpenComments }) {
     setCommentPost(post);
   }, []);
 
+  const handleCommentAdded = useCallback((postId) => {
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId ? { ...p, comments: (p.comments || 0) + 1 } : p
+      )
+    );
+  }, []);
+
   const renderFooter = useCallback(() => {
     if (!hasMore || loading) return null;
     return (
@@ -468,6 +486,8 @@ export default function FeedScreen({ onOpenComments }) {
   ), [handleOpenComments, handleVote, userId]);
 
   const keyExtractor = useCallback((item) => item.id, []);
+
+  if (!fontsLoaded) return null;
 
   if (loading && posts.length === 0) {
     return (
@@ -504,7 +524,7 @@ export default function FeedScreen({ onOpenComments }) {
         refreshing={refreshing}
         onRefresh={handleRefresh}
       />
-      <CommentModal post={commentPost} onClose={() => setCommentPost(null)} />
+      <CommentModal post={commentPost} onClose={() => setCommentPost(null)} onCommentAdded={handleCommentAdded} />
     </View>
   );
 }
@@ -525,6 +545,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   headerTitle: {
+    fontFamily: 'Inter_700Bold',
     fontSize: 28,
     fontWeight: '700',
     color: '#000',
@@ -547,6 +568,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   postTitle: {
+    fontFamily: 'Inter_700Bold',
     fontSize: 16,
     lineHeight: 28,
     fontWeight: '700',
@@ -554,10 +576,12 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   timestamp: {
+    fontFamily: 'Inter_400Regular',
     fontSize: 12,
     color: '#999',
   },
   authorName: {
+    fontFamily: 'Inter_500Medium',
     fontSize: 11,
     color: '#666',
     fontWeight: '500',
@@ -567,6 +591,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   textContent: {
+    fontFamily: 'Inter_400Regular',
     fontSize: 14,
     lineHeight: 24,
     color: '#333',
@@ -577,6 +602,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   tagText: {
+    fontFamily: 'Inter_500Medium',
     fontSize: 13,
     fontWeight: '500',
     marginRight: 3,
@@ -623,6 +649,7 @@ const styles = StyleSheet.create({
     width: 8,
   },
   seeMore: {
+    fontFamily: 'Inter_500Medium',
     color: '#666',
     fontSize: 14,
     marginTop: 4,
@@ -631,7 +658,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 18,
   },
   leftActions: {
     flexDirection: 'row',
@@ -646,6 +673,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   actionCount: {
+    fontFamily: 'Inter_500Medium',
     fontSize: 13,
     color: '#666',
     marginLeft: 4,
