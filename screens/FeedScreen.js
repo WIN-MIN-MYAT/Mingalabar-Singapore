@@ -578,12 +578,12 @@ const styles = StyleSheet.create({
   timestamp: {
     fontFamily: 'Inter_400Regular',
     fontSize: 12,
-    color: '#999',
+    color: '#00288e',
   },
   authorName: {
     fontFamily: 'Inter_500Medium',
     fontSize: 11,
-    color: '#666',
+    color: '#00288e',
     fontWeight: '500',
   },
   postContent: {
