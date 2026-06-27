@@ -150,6 +150,7 @@
     },
     "shop": {
       "new": "New",
+      "edited": "Edited",
       "sectionLocation": "Location",
       "writeReview": "Write a review",
       "yourReview": "Your review",
