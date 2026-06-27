@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, memo, useEffect } from 'react';
+import React, { useState, useRef, useCallback, memo, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,19 +18,13 @@ import { Ionicons } from '@expo/vector-icons';
 import ReAnimated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import {
-  useFonts,
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from '@expo-google-fonts/inter';
 import { UpvoteIcon, DownvoteIcon } from '../components/VoteIcons';
 import CommentModal from '../components/CommentModal';
 import { getFeed, getPostStats } from '../services/feedService';
 import { vote } from '../services/voteService';
 import { useAuth } from '../hooks/useAuth';
-
+import { useTheme } from '../contexts/ThemeContext';
+import { useI18n } from '../contexts/I18nContext';
 
 
 const { width } = Dimensions.get('window');
@@ -50,12 +44,16 @@ const TAG_COLORS = {
 const MAX_TEXT_LINES = 3;
 
 function PostTags({ tags }) {
+  const { colors } = useTheme();
+  const { font } = useI18n();
+  const styles = useMemo(() => createStyles(colors, font), [colors, font]);
+
   if (!tags || tags.length === 0) return null;
 
   return (
     <View style={styles.tagsContainer}>
       {tags.map((tag, index) => {
-        const tagColor = TAG_COLORS[tag.toLowerCase()] || '#666';
+        const tagColor = TAG_COLORS[tag.toLowerCase()] || colors.textTertiary;
         const displayTag = tag.charAt(0).toUpperCase() + tag.slice(1);
         return (
           <Text key={index} style={[styles.tagText, { color: tagColor }]}>
@@ -87,6 +85,9 @@ function snapToRatio(actualRatio) {
 }
 
 function ImageCarousel({ images }) {
+  const { colors } = useTheme();
+  const { font } = useI18n();
+  const styles = useMemo(() => createStyles(colors, font), [colors, font]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageHeights, setImageHeights] = useState({});
   const scrollViewRef = useRef(null);
@@ -164,6 +165,10 @@ function ImageCarousel({ images }) {
 }
 
 const Post = memo(function Post({ post, onOpenComments, onVote, userId }) {
+  const { colors } = useTheme();
+  const { t, font } = useI18n();
+  const styles = useMemo(() => createStyles(colors, font), [colors, font]);
+
   const [userVote, setUserVote] = useState(post.userVote);
   const [upvotes, setUpvotes] = useState(post.upvotes);
   const [downvotes, setDownvotes] = useState(post.downvotes);
@@ -283,7 +288,7 @@ const Post = memo(function Post({ post, onOpenComments, onVote, userId }) {
                   {post.content}
                 </Text>
                 <TouchableOpacity onPress={() => setIsExpanded(false)} activeOpacity={0.7}>
-                  <Text style={styles.seeMore}>See Less</Text>
+                  <Text style={styles.seeMore}>{t('common.seeLess')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -293,7 +298,7 @@ const Post = memo(function Post({ post, onOpenComments, onVote, userId }) {
                 </Text>
                 {showSeeMore && (
                   <TouchableOpacity onPress={() => setIsExpanded(true)} activeOpacity={0.7}>
-                    <Text style={styles.seeMore}>See More</Text>
+                    <Text style={styles.seeMore}>{t('common.seeMore')}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -315,7 +320,7 @@ const Post = memo(function Post({ post, onOpenComments, onVote, userId }) {
             activeOpacity={0.7}
           >
             <Animated.View style={{ transform: [{ scale: upvoteScaleAnim }] }}>
-              <UpvoteIcon size={24} color={userVote === 'up' ? '#FF4500' : '#666'} filled={userVote === 'up'} />
+              <UpvoteIcon size={24} color={userVote === 'up' ? '#FF4500' : colors.textTertiary} filled={userVote === 'up'} />
             </Animated.View>
             <Text style={styles.actionCount}>{formatNumber(upvotes)}</Text>
           </TouchableOpacity>
@@ -326,7 +331,7 @@ const Post = memo(function Post({ post, onOpenComments, onVote, userId }) {
             activeOpacity={0.7}
           >
             <Animated.View style={{ transform: [{ scale: downvoteScaleAnim }] }}>
-              <DownvoteIcon size={24} color={userVote === 'down' ? '#7193FF' : '#666'} filled={userVote === 'down'} />
+              <DownvoteIcon size={24} color={userVote === 'down' ? '#7193FF' : colors.textTertiary} filled={userVote === 'down'} />
             </Animated.View>
             <Text style={styles.actionCount}>{formatNumber(downvotes)}</Text>
           </TouchableOpacity>
@@ -337,7 +342,7 @@ const Post = memo(function Post({ post, onOpenComments, onVote, userId }) {
           activeOpacity={0.7}
           onPress={() => onOpenComments?.(post)}
         >
-          <Ionicons name="chatbubble-outline" size={20} color="#666" />
+          <Ionicons name="chatbubble-outline" size={20} color={colors.textTertiary} />
           <Text style={styles.actionCount}>{formatNumber(post.comments)}</Text>
         </TouchableOpacity>
       </View>
@@ -346,6 +351,7 @@ const Post = memo(function Post({ post, onOpenComments, onVote, userId }) {
 });
 
 function SkeletonBox({ width, height, style }) {
+  const { colors } = useTheme();
   const opacity = useSharedValue(0.3);
 
   useEffect(() => {
@@ -360,12 +366,16 @@ function SkeletonBox({ width, height, style }) {
 
   return (
     <ReAnimated.View
-      style={[{ width, height, borderRadius: 6, backgroundColor: '#e0e3e5' }, style, animStyle]}
+      style={[{ width, height, borderRadius: 6, backgroundColor: colors.surfaceAlt }, style, animStyle]}
     />
   );
 }
 
 function SkeletonPost() {
+  const { colors } = useTheme();
+  const { font } = useI18n();
+  const styles = useMemo(() => createStyles(colors, font), [colors, font]);
+
   return (
     <View style={styles.postContainer}>
       <View style={styles.postHeader}>
@@ -391,22 +401,22 @@ function SkeletonPost() {
 
 function FeedHeader() {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const { t, font } = useI18n();
+  const styles = useMemo(() => createStyles(colors, font), [colors, font]);
 
   return (
     <View style={[styles.header, { paddingTop: insets.top }]}>
-      <Text style={styles.headerTitle}>Feed</Text>
+      <Text style={styles.headerTitle}>{t('tabs.feed')}</Text>
     </View>
   );
 }
 
 export default function FeedScreen({ onOpenComments }) {
   const { userId, isAuthenticated } = useAuth();
-  const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-  });
+  const { colors } = useTheme();
+  const { font } = useI18n();
+  const styles = useMemo(() => createStyles(colors, font), [colors, font]);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -476,18 +486,16 @@ export default function FeedScreen({ onOpenComments }) {
     if (!hasMore || loading) return null;
     return (
       <View style={styles.loadingMore}>
-        <ActivityIndicator size="small" color="#007AFF" />
+        <ActivityIndicator size="small" color={colors.primary} />
       </View>
     );
-  }, [hasMore, loading]);
+  }, [hasMore, loading, colors.primary]);
 
   const renderItem = useCallback(({ item }) => (
     <Post post={item} onOpenComments={handleOpenComments} onVote={handleVote} userId={userId} />
   ), [handleOpenComments, handleVote, userId]);
 
   const keyExtractor = useCallback((item) => item.id, []);
-
-  if (!fontsLoaded) return null;
 
   if (loading && posts.length === 0) {
     return (
@@ -529,163 +537,159 @@ export default function FeedScreen({ onOpenComments }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#E5E5E5',
-    backgroundColor: '#fff',
-  },
-  headerTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#000',
-    letterSpacing: -0.5,
-  },
-  notificationButton: {
-    padding: 4,
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  postContainer: {
-    backgroundColor: '#fff',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#E5E5E5',
-    paddingVertical: 16,
-  },
-  postHeader: {
-    paddingHorizontal: 12,
-    marginBottom: 12,
-  },
-  postTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 16,
-    lineHeight: 28,
-    fontWeight: '700',
-    color: '#000',
-    marginBottom: 0,
-  },
-  timestamp: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12,
-    color: '#00288e',
-  },
-  authorName: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 11,
-    color: '#00288e',
-    fontWeight: '500',
-  },
-  postContent: {
-    paddingHorizontal: 12,
-    marginBottom: 12,
-  },
-  textContent: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    lineHeight: 24,
-    color: '#333',
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-  },
-  tagText: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
-    fontWeight: '500',
-    marginRight: 3,
-  },
-  carouselContainer: {
-    width: width,
-    backgroundColor: '#F5F5F5',
-    marginBottom: 12,
-  },
-  postImage: {
-    width: width,
-  },
-  imageWrapper: {
-    width: width,
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  carouselDots: {
-    position: 'absolute',
-    bottom: 12,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dotsBackground: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    marginHorizontal: 3,
-  },
-  dotActive: {
-    backgroundColor: '#fff',
-    width: 8,
-  },
-  seeMore: {
-    fontFamily: 'Inter_500Medium',
-    color: '#666',
-    fontSize: 14,
-    marginTop: 4,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-  },
-  leftActions: {
-    flexDirection: 'row',
-  },
-  actionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 24,
-  },
-  actionItemRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  actionCount: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 13,
-    color: '#666',
-    marginLeft: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 100,
-  },
-  loadingMore: {
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-});
+function createStyles(c, f) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      borderBottomWidth: 0.5,
+      borderBottomColor: c.headerBorder,
+      backgroundColor: c.bg,
+    },
+    headerTitle: {
+      fontFamily: f.bold,
+      fontSize: 28,
+      fontWeight: '700',
+      color: c.text,
+      letterSpacing: -0.5,
+    },
+    notificationButton: {
+      padding: 4,
+    },
+    scrollContent: {
+      paddingBottom: 20,
+    },
+    postContainer: {
+      backgroundColor: c.bg,
+      borderBottomWidth: 0.5,
+      borderBottomColor: c.headerBorder,
+      paddingVertical: 16,
+    },
+    postHeader: {
+      paddingHorizontal: 12,
+      marginBottom: 12,
+    },
+    postTitle: {
+      fontFamily: f.bold,
+      fontSize: 16,
+      lineHeight: 28,
+      fontWeight: '700',
+      color: c.text,
+      marginBottom: 0,
+    },
+    timestamp: {
+      fontFamily: f.regular,
+      fontSize: 12,
+      color: c.primary,
+    },
+    postContent: {
+      paddingHorizontal: 12,
+      marginBottom: 12,
+    },
+    textContent: {
+      fontFamily: f.regular,
+      fontSize: 14,
+      lineHeight: 24,
+      color: c.textSecondary,
+    },
+    tagsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginTop: 8,
+    },
+    tagText: {
+      fontFamily: f.medium,
+      fontSize: 13,
+      fontWeight: '500',
+      marginRight: 3,
+    },
+    carouselContainer: {
+      width: width,
+      backgroundColor: c.surfaceAlt,
+      marginBottom: 12,
+    },
+    postImage: {
+      width: width,
+    },
+    imageWrapper: {
+      width: width,
+      justifyContent: 'center',
+      overflow: 'hidden',
+    },
+    carouselDots: {
+      position: 'absolute',
+      bottom: 12,
+      left: 0,
+      right: 0,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    dotsBackground: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.overlay,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 12,
+    },
+    dot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: 'rgba(255, 255, 255, 0.5)',
+      marginHorizontal: 3,
+    },
+    dotActive: {
+      backgroundColor: '#fff',
+      width: 8,
+    },
+    seeMore: {
+      fontFamily: f.medium,
+      color: c.textTertiary,
+      fontSize: 14,
+      marginTop: 4,
+    },
+    actionsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 18,
+    },
+    leftActions: {
+      flexDirection: 'row',
+    },
+    actionItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: 24,
+    },
+    actionItemRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    actionCount: {
+      fontFamily: f.medium,
+      fontSize: 13,
+      color: c.textTertiary,
+      marginLeft: 4,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingTop: 100,
+    },
+    loadingMore: {
+      paddingVertical: 20,
+      alignItems: 'center',
+    },
+  });
+}
