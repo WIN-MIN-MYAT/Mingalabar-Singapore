@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { memo, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,8 @@ import ReAnimated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getComments, addComment } from '../services/commentService';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../contexts/ThemeContext';
+import { useI18n } from '../contexts/I18nContext';
 import AvGirl1 from '../assets/avatar/av_girl1.svg';
 import AvGirl2 from '../assets/avatar/av_girl2.svg';
 import AvGirl3 from '../assets/avatar/av_girl3.svg';
@@ -43,7 +45,7 @@ const AVATAR_MAP = {
   girl4: AvGirl4,
 };
 
-function formatTimeAgo(isoString) {
+function formatTimeAgo(isoString, t) {
   const date = new Date(isoString);
   const now = new Date();
   const diffMs = now - date;
@@ -51,26 +53,31 @@ function formatTimeAgo(isoString) {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'now';
-  if (diffMins < 60) return `${diffMins}m`;
-  if (diffHours < 24) return `${diffHours}h`;
-  if (diffDays < 7) return `${diffDays}d`;
+  if (diffMins < 1) return t('common.time.now');
+  if (diffMins < 60) return t('common.time.m', { count: diffMins });
+  if (diffHours < 24) return t('common.time.h', { count: diffHours });
+  if (diffDays < 7) return t('common.time.d', { count: diffDays });
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function SkeletonBox({ w, h, style }) {
+  const { colors } = useTheme();
   const opacity = useSharedValue(0.3);
   opacity.value = withRepeat(withTiming(0.7, { duration: 800 }), -1, true);
   const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   return (
     <ReAnimated.View
-      style={[{ width: w, height: h, borderRadius: 6, backgroundColor: '#e0e3e5' }, style, animStyle]}
+      style={[{ width: w, height: h, borderRadius: 6, backgroundColor: colors.surfaceAlt }, style, animStyle]}
     />
   );
 }
 
 function SkeletonComment() {
+  const { colors } = useTheme();
+  const { font } = useI18n();
+  const styles = useMemo(() => createStyles(colors, font), [colors, font]);
+
   return (
     <View style={styles.commentItem}>
       <SkeletonBox w={32} h={32} style={{ borderRadius: 16 }} />
@@ -86,8 +93,181 @@ function SkeletonComment() {
   );
 }
 
-function CommentItem({ comment }) {
-  const displayName = comment.profiles?.username || comment.profiles?.full_name || 'User';
+function createStyles(c, f) {
+  return StyleSheet.create({
+    overlay: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: c.overlay,
+    },
+    sheet: {
+      backgroundColor: c.bg,
+      borderTopLeftRadius: 16,
+      borderTopRightRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.borderStrong,
+      overflow: 'hidden',
+    },
+    handleBar: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: c.borderStrong,
+      alignSelf: 'center',
+      marginTop: 8,
+      marginBottom: 4,
+    },
+    sheetHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+      paddingTop: 0,
+      paddingBottom: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+    },
+    sheetTitle: {
+      fontFamily: f.bold,
+      fontSize: 16,
+      fontWeight: '700',
+      color: c.primary,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    emptyList: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingBottom: 66,
+    },
+    emptyContainer: {
+      alignItems: 'center',
+    },
+    emptyText: {
+      fontFamily: f.semibold,
+      fontSize: 15,
+      fontWeight: '600',
+      color: c.textSecondary,
+      marginTop: 12,
+    },
+    emptySubtext: {
+      fontFamily: f.regular,
+      fontSize: 13,
+      color: c.textTertiary,
+      marginTop: 4,
+    },
+    listContent: {
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+    },
+    commentItem: {
+      flexDirection: 'row',
+      paddingVertical: 10,
+    },
+    commentAvatar: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: c.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+      overflow: 'hidden',
+      borderWidth: 0.5,
+      borderColor: c.primary,
+    },
+    avatarClip: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      overflow: 'hidden',
+    },
+    avatarImage: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+    },
+    commentAvatarText: {
+      fontFamily: f.semibold,
+      fontSize: 13,
+      fontWeight: '600',
+      color: c.textSecondary,
+    },
+    commentBody: {
+      flex: 1,
+    },
+    commentHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 2,
+    },
+    commentUsername: {
+      fontFamily: f.semibold,
+      fontSize: 13,
+      fontWeight: '600',
+      color: c.text,
+      marginRight: 8,
+    },
+    commentTime: {
+      fontFamily: f.medium,
+      fontSize: 11,
+      color: c.primary,
+    },
+    commentText: {
+      fontFamily: f.regular,
+      fontSize: 14,
+      lineHeight: 24,
+      color: c.textSecondary,
+    },
+    inputBar: {
+      paddingHorizontal: 12,
+      paddingTop: 8,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+      backgroundColor: c.bg,
+    },
+    inputContainer: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      backgroundColor: c.surface,
+      borderRadius: 20,
+      paddingLeft: 14,
+      paddingRight: 4,
+      paddingVertical: 4,
+    },
+    input: {
+      fontFamily: f.regular,
+      flex: 1,
+      fontSize: 14,
+      color: c.text,
+      maxHeight: 80,
+      paddingVertical: 6,
+    },
+    sendButton: {
+      width: 32,
+      height: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sendButtonDisabled: {
+      opacity: 0.4,
+    },
+  });
+}
+
+const CommentItem = memo(function CommentItem({ comment }) {
+  const { colors } = useTheme();
+  const { t, font } = useI18n();
+  const styles = useMemo(() => createStyles(colors, font), [colors, font]);
+
+  const displayName = comment.profiles?.username || comment.profiles?.full_name || t('feed.comment.anonymous');
   const avatarUrl = comment.profiles?.avatar_url;
   const SvgAvatar = avatarUrl && AVATAR_MAP[avatarUrl];
   const isUrl = avatarUrl && (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://'));
@@ -110,17 +290,21 @@ function CommentItem({ comment }) {
       <View style={styles.commentBody}>
         <View style={styles.commentHeader}>
           <Text style={styles.commentUsername}>{displayName}</Text>
-          <Text style={styles.commentTime}>{formatTimeAgo(comment.created_at)}</Text>
+          <Text style={styles.commentTime}>{formatTimeAgo(comment.created_at, t)}</Text>
         </View>
         <Text style={styles.commentText}>{comment.content}</Text>
       </View>
     </View>
   );
-}
+});
 
 export default function CommentModal({ post, onClose, onCommentAdded }) {
   const { userId } = useAuth();
+  const { colors } = useTheme();
+  const { t, font } = useI18n();
   const insets = useSafeAreaInsets();
+  const styles = useMemo(() => createStyles(colors, font), [colors, font]);
+
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -256,20 +440,20 @@ export default function CommentModal({ post, onClose, onCommentAdded }) {
 
   const renderListHeader = useCallback(() => (
     <View style={styles.sheetHeader}>
-      <Text style={styles.sheetTitle}>Comments</Text>
+      <Text style={styles.sheetTitle}>{t('feed.comment.title')}</Text>
       <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-        <Ionicons name="close" size={22} color="#666" />
+        <Ionicons name="close" size={22} color={colors.textTertiary} />
       </TouchableOpacity>
     </View>
-  ), [handleClose]);
+  ), [handleClose, styles, t, colors]);
 
   const renderEmpty = useCallback(() => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="chatbubble-outline" size={48} color="#c4c5d5" />
-      <Text style={styles.emptyText}>No comments yet</Text>
-      <Text style={styles.emptySubtext}>Be the first to share your thoughts</Text>
+      <Ionicons name="chatbubble-outline" size={48} color={colors.borderStrong} />
+      <Text style={styles.emptyText}>{t('feed.comment.empty')}</Text>
+      <Text style={styles.emptySubtext}>{t('feed.comment.emptySub')}</Text>
     </View>
-  ), []);
+  ), [styles, t, colors]);
 
   if (!visible) return null;
 
@@ -322,6 +506,11 @@ export default function CommentModal({ post, onClose, onCommentAdded }) {
               }
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              removeClippedSubviews
+              initialNumToRender={12}
+              maxToRenderPerBatch={10}
+              updateCellsBatchingPeriod={40}
+              windowSize={11}
             />
           )}
 
@@ -343,8 +532,8 @@ export default function CommentModal({ post, onClose, onCommentAdded }) {
               <TextInput
                 ref={inputRef}
                 style={styles.input}
-                placeholder="Add a comment..."
-                placeholderTextColor="#757684"
+                placeholder={t('feed.comment.placeholder')}
+                placeholderTextColor={colors.textTertiary}
                 value={newComment}
                 onChangeText={setNewComment}
                 multiline
@@ -357,12 +546,12 @@ export default function CommentModal({ post, onClose, onCommentAdded }) {
                 activeOpacity={0.7}
               >
                 {submitting ? (
-                  <ActivityIndicator size="small" color="#00288e" />
+                  <ActivityIndicator size="small" color={colors.primary} />
                 ) : (
                   <Ionicons
                     name="send"
                     size={20}
-                    color={newComment.trim() ? '#00288e' : '#c4c5d5'}
+                    color={newComment.trim() ? colors.primary : colors.borderStrong}
                   />
                 )}
               </TouchableOpacity>
@@ -373,170 +562,3 @@ export default function CommentModal({ post, onClose, onCommentAdded }) {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-  },
-  sheet: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#000',
-    overflow: 'hidden',
-  },
-  handleBar: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#d1d3d6',
-    alignSelf: 'center',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  sheetHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 0,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#e0e3e5',
-  },
-  sheetTitle: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#00288e',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyList: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 66,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#444653',
-    marginTop: 12,
-  },
-  emptySubtext: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 13,
-    color: '#757684',
-    marginTop: 4,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  commentItem: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-  },
-  commentAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#eceef0',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-    overflow: 'hidden',
-    borderWidth: 0.5,
-    borderColor: '#00288e',
-  },
-  avatarClip: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  commentAvatarText: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#444653',
-  },
-  commentBody: {
-    flex: 1,
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  commentUsername: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#191c1e',
-    marginRight: 8,
-  },
-  commentTime: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 11,
-    color: '#00288e',
-  },
-  commentText: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 14,
-    lineHeight: 24,
-    color: '#444653',
-  },
-  inputBar: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#e0e3e5',
-    backgroundColor: '#fff',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    backgroundColor: '#f2f4f6',
-    borderRadius: 20,
-    paddingLeft: 14,
-    paddingRight: 4,
-    paddingVertical: 4,
-  },
-  input: {
-    fontFamily: 'Inter_400Regular',
-    flex: 1,
-    fontSize: 14,
-    color: '#191c1e',
-    maxHeight: 80,
-    paddingVertical: 6,
-  },
-  sendButton: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendButtonDisabled: {
-    opacity: 0.4,
-  },
-});
