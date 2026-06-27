@@ -17,7 +17,7 @@ const { width, height } = Dimensions.get('window');
 const SLIDES = [
   {
     id: '1',
-    title: 'Welcome to MG-SG',
+    title: 'Welcome to Mingalabar SG',
     description: 'Your community platform for sharing ideas, news, and connecting with others.',
     icon: 'people-outline',
     color: '#007AFF',

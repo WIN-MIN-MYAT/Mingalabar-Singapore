@@ -3,6 +3,7 @@ import { View, TouchableOpacity, Text, StyleSheet, Platform } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { useTheme } from '../contexts/ThemeContext';
 
 const iconMap = {
   Home: { outline: 'home-outline', filled: 'home' },
@@ -20,6 +21,7 @@ const springConfig = {
 
 export default function CustomTabBar({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const tabLayouts = useRef([]);
   const [measured, setMeasured] = useState(false);
   const translateX = useSharedValue(0);
@@ -39,15 +41,29 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
     width: lineWidth.value,
   }));
 
+  // Hide the tab bar on full-screen nested routes (e.g. the Conversation
+  // screen pushed inside the Chat stack) so it doesn't overlap their content.
+  // Must run AFTER all hooks to keep the hook count consistent.
+  const FULLSCREEN_ROUTES = ['Conversation', 'FindFriends', 'Matching'];
+  const focusedTab = state.routes[state.index];
+  const nested = focusedTab?.state;
+  const focusedNestedName = nested?.routes?.[nested?.index]?.name;
+  if (focusedNestedName && FULLSCREEN_ROUTES.includes(focusedNestedName)) {
+    return null;
+  }
+
   return (
     <View
       style={[
         styles.container,
-        { paddingBottom: insets.bottom || 34 },
+        {
+          paddingBottom: insets.bottom || 34,
+          backgroundColor: Platform.select({ ios: colors.bg + 'E6', android: colors.bg }),
+        },
       ]}
     >
       {measured && (
-        <Animated.View style={[styles.line, lineStyle]} />
+        <Animated.View style={[styles.line, lineStyle, { backgroundColor: colors.primary }]} />
       )}
       <View style={styles.bar}>
         {state.routes.map((route, index) => {
@@ -56,7 +72,7 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
           const label = options.tabBarLabel ?? options.title ?? route.name;
           const icons = iconMap[route.name] || iconMap.Home;
           const iconName = isFocused ? icons.filled : icons.outline;
-          const color = isFocused ? '#00288e' : '#8E8E93';
+          const color = isFocused ? colors.primary : colors.muted;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -110,10 +126,6 @@ export default function CustomTabBar({ state, descriptors, navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Platform.select({
-      ios: 'rgba(255, 255, 255, 0.85)',
-      android: '#FFFFFF',
-    }),
     borderTopWidth: 0,
     ...Platform.select({
       ios: {
@@ -133,7 +145,6 @@ const styles = StyleSheet.create({
     left: 0,
     height: 3,
     borderRadius: 1.5,
-    backgroundColor: '#00288e',
   },
   bar: {
     flexDirection: 'row',

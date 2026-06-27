@@ -1,25 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Platform, View, ActivityIndicator, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 
 import CustomTabBar from './components/CustomTabBar';
 import HomeScreen from './screens/HomeScreen';
 import FeedScreen from './screens/FeedScreen';
 import CommunityScreen from './screens/CommunityScreen';
-import ChatScreen from './screens/ChatScreen';
+import ChatNavigator from './navigation/ChatNavigator';
 import GuideScreen from './screens/GuideScreen';
 import LoginScreen from './screens/LoginScreen';
 import AvatarScreen from './screens/AvatarScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import SplashScreen from './screens/SplashScreen';
 import AuthProvider, { useAuth } from './contexts/AuthContext';
+import { MatchingProvider } from './contexts/MatchingContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { I18nProvider } from './contexts/I18nContext';
 import { storageService } from './services/storageService';
+
+// Loads all app fonts once. Returns null until ready so the first paint
+// already has the right typeface.
+//
+// Burmese (Noto Sans Myanmar): add the two .ttf files to assets/fonts/, then
+// uncomment the two requires + entries below to enable the Myanmar font.
+//   import notoRegular from './assets/fonts/NotoSansMyanmar-Regular.ttf';
+//   import notoBold from './assets/fonts/NotoSansMyanmar-Bold.ttf';
+function FontsLoader({ children }) {
+  const [loaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    // 'NotoSansMyanmar-Regular': notoRegular,
+    // 'NotoSansMyanmar-Bold': notoBold,
+  });
+  if (!loaded) return null;
+  return children;
+}
 
 function FeedScreenWrapper({ navigation, route }) {
   return <FeedScreen />;
@@ -63,7 +87,7 @@ function MainTabs() {
       />
       <Tab.Screen
         name="Chat"
-        component={ChatScreen}
+        component={ChatNavigator}
         options={{
           tabBarLabel: 'Chat',
           tabBarIcon: ({ color }) => (
@@ -90,6 +114,29 @@ const Tab = createBottomTabNavigator();
 const screenOptions = {
   headerShown: false,
 };
+
+// NavigationContainer + StatusBar driven by the active theme.
+function ThemedApp({ children }) {
+  const { colors, resolved } = useTheme();
+  const base = resolved === 'dark' ? DarkTheme : DefaultTheme;
+  const navTheme = {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: colors.primary,
+      background: colors.bg,
+      card: colors.bg,
+      border: colors.headerBorder,
+      text: colors.text,
+    },
+  };
+  return (
+    <>
+      <NavigationContainer theme={navTheme}>{children}</NavigationContainer>
+      <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} />
+    </>
+  );
+}
 
 function AppContent() {
   const { loading: authLoading, isAuthenticated, profile } = useAuth();
@@ -179,15 +226,22 @@ function AppContent() {
   return (
     <>
       {showAvatar ? (
-        <AvatarScreen onComplete={handleAvatarComplete} />
+        <>
+          <AvatarScreen onComplete={handleAvatarComplete} />
+          <StatusBar style="dark" />
+        </>
       ) : isAuthenticated ? (
-        <NavigationContainer>
-          <MainTabs />
-        </NavigationContainer>
+        <ThemedApp>
+          <MatchingProvider>
+            <MainTabs />
+          </MatchingProvider>
+        </ThemedApp>
       ) : (
-        <LoginScreen onLoginSuccess={handleLoginSuccess} onSignupComplete={handleSignupComplete} onBack={handleBackToOnboarding} />
+        <>
+          <LoginScreen onLoginSuccess={handleLoginSuccess} onSignupComplete={handleSignupComplete} onBack={handleBackToOnboarding} />
+          <StatusBar style="dark" />
+        </>
       )}
-      <StatusBar style="auto" />
     </>
   );
 }
@@ -197,9 +251,15 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <AuthProvider>
-          <BottomSheetModalProvider>
-            <AppContent />
-          </BottomSheetModalProvider>
+          <ThemeProvider>
+            <I18nProvider>
+              <FontsLoader>
+                <BottomSheetModalProvider>
+                  <AppContent />
+                </BottomSheetModalProvider>
+              </FontsLoader>
+            </I18nProvider>
+          </ThemeProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

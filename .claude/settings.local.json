@@ -6,7 +6,10 @@
       "Bash(npm list *)",
       "Bash(grep -r \"expo-svg\" package.json)",
       "Bash(grep -i \"svg\" package.json)",
-      "Read(//c/Users/anomm/AppData/Local/Temp/ddaf5ced-7269-4afd-a750-60f253b34b6e_stitch_professional_interface_enhancement.zip.b6e/**)"
+      "Read(//c/Users/anomm/AppData/Local/Temp/ddaf5ced-7269-4afd-a750-60f253b34b6e_stitch_professional_interface_enhancement.zip.b6e/**)",
+      "Bash(npx eas *)",
+      "Bash(cat .easrc)",
+      "Bash(cat eas.json)"
     ]
   }
 }
