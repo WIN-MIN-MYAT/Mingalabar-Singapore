@@ -1,0 +1,174 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "continue": "Continue",
+    "ok": "OK",
+    "back": "Back",
+    "done": "Done",
+    "search": "Search",
+    "seeMore": "See more",
+    "seeLess": "See less",
+    "time": {
+      "now": "now",
+      "m": "{{count}}m",
+      "h": "{{count}}h",
+      "d": "{{count}}d"
+    }
+  },
+  "tabs": {
+    "home": "Home",
+    "feed": "Feed",
+    "community": "Community",
+    "chat": "Chat",
+    "guide": "Guide"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "appearanceDesc": "Choose how the app looks",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "language": "Language",
+    "languageDesc": "App display language",
+    "account": "Account",
+    "accountDesc": "Profile, password & more"
+  },
+  "home": {
+    "title": "Home",
+    "greeting": "Mingalabar, {{name}} 👋",
+    "greetingSub": "Welcome to your community hub.",
+    "cta": "Meet people nearby",
+    "ctaSub": "Find friends who share your interests",
+    "hello": "Hello, {{name}}",
+    "logout": "Logout",
+    "signout": "Sign out",
+    "resetOnboarding": "Reset Onboarding",
+    "quickActions": "Quick actions",
+    "q": {
+      "feed": "Browse Feed",
+      "community": "Find Places",
+      "chat": "Messages",
+      "guide": "Resources"
+    },
+    "needHelp": "Need help?",
+    "needHelpSub": "Myanmar Embassy — here for citizens",
+    "callNow": "Call"
+  },
+  "guide": {
+    "title": "Guide",
+    "intro": "Essential resources for living in Singapore as a Myanmar resident."
+  },
+  "findFriends": {
+    "title": "Find Friends",
+    "heroTitle": "Find your community",
+    "heroSubtitle": "Set your preferences and we’ll match you with people nearby.",
+    "showMe": "Show me",
+    "ageRange": "Age range",
+    "interestedIn": "I’m interested in",
+    "termsAgree": "I agree to the {{guidelines}} and {{terms}}.",
+    "communityGuidelines": "Community Guidelines",
+    "termsOfService": "Terms of Service",
+    "safetyNote": "Be respectful. Keep it safe — never share bank or OTP details. Matches are anonymous until you both start chatting.",
+    "startMatching": "Start Matching",
+    "hintTerms": "Accept the terms to continue",
+    "hintBasics": "Choose who you’d like to meet",
+    "hintInterest": "Pick at least one interest",
+    "hintReady": "Ready when you are",
+    "genders": {
+      "women": "Women",
+      "men": "Men",
+      "everyone": "Everyone"
+    },
+    "ages": {
+      "18-24": "18-24",
+      "25-34": "25-34",
+      "35-44": "35-44",
+      "45+": "45+",
+      "any": "Any"
+    },
+    "interests": {
+      "renting": "Need Renting Advice",
+      "jobHunting": "Job Hunting",
+      "venting": "Just Venting / Homesick",
+      "casualChat": "Casual Chat",
+      "foodDining": "Food & Dining",
+      "languageExchange": "Language Exchange",
+      "events": "Events & Meetups",
+      "visaHelp": "Visa & Pass Help",
+      "buyingSelling": "Buying & Selling",
+      "studyTips": "Study Tips"
+    }
+  },
+  "matching": {
+    "finding": "Finding people near you…",
+    "findingSub": "We’re looking for someone who matches your preferences.",
+    "itsAMatch": "It’s a match!",
+    "keepSearching": "Keep searching",
+    "sayHi": "Say hi"
+  },
+  "chat": {
+    "title": "Chats",
+    "emptyTitle": "No conversations yet",
+    "emptySubtitle": "Discover and connect with people from your community.",
+    "meetNewPeople": "Meet new people"
+  },
+  "conversation": {
+    "messagePlaceholder": "Message…",
+    "delivered": "Delivered",
+    "sending": "Sending…",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "endChatTitle": "End this chat?",
+    "endChatMessage": "This conversation will be removed from your chats. The other person will not be notified.",
+    "endChat": "End chat",
+    "gifs": "GIFs",
+    "searchGifs": "Search GIFs"
+  },
+  "feed": {
+    "comment": {
+      "title": "Comments",
+      "placeholder": "Add a comment...",
+      "empty": "No comments yet",
+      "emptySub": "Be the first to share your thoughts",
+      "anonymous": "User"
+    }
+  },
+  "community": {
+    "searchPlaceholder": "Search locations...",
+    "empty": "No locations found",
+    "cat": {
+      "all": "All",
+      "food": "Food & Dining",
+      "retail": "Retail & Groceries",
+      "health": "Healthcare & Wellness",
+      "services": "Professional Services",
+      "community": "Community & Culture"
+    },
+    "shop": {
+      "sectionLocation": "Location",
+      "writeReview": "Write a review",
+      "yourReview": "Your review",
+      "yourRating": "Your rating",
+      "yourFeedback": "Your feedback",
+      "feedbackPlaceholder": "Share your experience...",
+      "charsNeeded": "{{count}} more characters needed",
+      "charsCount": "{{count}}/500",
+      "postReview": "Post review",
+      "updateReview": "Update review",
+      "reviews": "Reviews",
+      "reviewsWithCount": "Reviews ({{count}})",
+      "emptyReviews": "No reviews yet",
+      "emptyReviewsSub": "Be the first to share your experience",
+      "errorTitle": "Something went wrong",
+      "errorBody": "Could not post your review. Please try again.",
+      "rateLimitTitle": "Slow down",
+      "rateLimitBody": "You are posting reviews too quickly. Please try again in a moment.",
+      "unverifiedTitle": "Verify your email",
+      "unverifiedBody": "Please verify your email before posting a review."
+    }
+  }
+}
